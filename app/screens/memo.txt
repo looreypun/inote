@@ -1,0 +1,29 @@
+import React, {useEffect} from "react";
+import {Text, TouchableOpacity, View} from "react-native";
+import {onAuthStateChanged, signOut} from 'firebase/auth';
+import auth from '../../firebase';
+
+const MainScreen = ({ navigation }) => {
+    useEffect(() => {
+        onAuthStateChanged(auth, user => {
+            if (!user) {
+                navigation.navigate('Login');
+            }
+        });
+    }, []);
+
+    const handleLogout = async () => {
+        await signOut(auth);
+        navigation.navigate('Login');
+    }
+
+    return (
+        <View style={{marginTop: 60, marginLeft: 50}}>
+            <TouchableOpacity onPress={handleLogout}>
+                <Text>Logout</Text>
+            </TouchableOpacity>
+        </View>
+    )
+}
+
+export default MainScreen;

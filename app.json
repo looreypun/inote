@@ -1,0 +1,41 @@
+{
+  "expo": {
+    "name": "inote",
+    "slug": "inote",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/inote.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
+      }
+    },
+    "web": {
+      "favicon": "./assets/inote.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "a3cd133b-d009-46d6-9623-f30fb6959b10"
+      }
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/a3cd133b-d009-46d6-9623-f30fb6959b10"
+    }
+  }
+}

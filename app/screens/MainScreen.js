@@ -1,62 +1,43 @@
-import React, {useEffect, useState} from "react";
+import React, {useEffect, useState, useRef} from "react";
 import {
     TextInput,
     TouchableOpacity,
     View,
     StyleSheet,
-    FlatList,
-    Keyboard,
-    TouchableWithoutFeedback
+    FlatList
 } from "react-native";
 import {onAuthStateChanged, signOut} from 'firebase/auth';
-import AddFolderModal from "../components/AddFolderModal";
+import { useIsFocused } from "@react-navigation/native";
 import { Icon, Text } from '@rneui/themed';
-import { collection, getDocs, query, where } from 'firebase/firestore';
+import { collection, getDocs, deleteDoc, query, where, doc } from 'firebase/firestore';
 import {auth, db} from '../../firebase';
 import {color} from "../config/color";
 import {font} from "../config/font";
+import { LongPressGestureHandler, State } from 'react-native-gesture-handler';
+import FolderMenu from "../components/FolderMenu";
 
 const MainScreen = ({ navigation }) => {
+    const [menuVisible, setMenuVisible] = useState(false);
     const [folders, setFolders] = useState([]);
     const [filteredFolders, setFilteredFolders] = useState([]);
-    const [isModalVisible, setModalVisible] = useState(false);
 
-    const toggleModal = () => {
-        setModalVisible(!isModalVisible);
-    };
+    const isFocused = useIsFocused();
 
     useEffect(() => {
-        onAuthStateChanged(auth, user => {
+        const unsubscribe = onAuthStateChanged(auth, (user) => {
             if (!user) {
                 navigation.navigate('Login');
             }
         });
-    }, [navigation]);
-
-    // useFocusEffect(
-    //
-    // );
-    useEffect(() => {
-        const fetchFolders = () => {
-            const foldersRef = collection(db, 'folders');
-            const q = query(foldersRef, where('uid', '==', auth.currentUser.uid));
-            getDocs(q)
-                .then((querySnapshot) => {
-                    let data = [];
-                    querySnapshot.forEach((doc) => {
-                        data.push({
-                            id: doc.id,
-                            ...doc.data()
-                        });
-                    });
-                    setFolders(data);
-                    setFilteredFolders(data);
-                }).catch(error => {
-                    console.error('Error fetching folders:', error);
-                });
+    
+        if (isFocused) {
+            fetchFolders();
         }
-        fetchFolders();
-    }, [navigation]);
+    
+        return () => {
+            unsubscribe();
+        };
+    }, [isFocused, navigation]);
 
     const handleSearch = (key) => {
         const result = folders.filter(folder => folder.name.toLowerCase().includes(key.toLowerCase()));
@@ -67,43 +48,92 @@ const MainScreen = ({ navigation }) => {
         await signOut(auth);
     }
 
+    const fetchFolders = () => {
+        const foldersRef = collection(db, 'folders');
+        const q = query(foldersRef, where('uid', '==', auth.currentUser.uid));
+        getDocs(q)
+            .then((querySnapshot) => {
+                let data = [];
+                querySnapshot.forEach((doc) => {
+                    data.push({
+                        id: doc.id,
+                        ...doc.data()
+                    });
+                });
+                setFolders(data);
+                setFilteredFolders(data);
+            }).catch(error => {
+                console.error('Error fetching folders:', error);
+            });
+    }
+
+    const deleteFolder = (folderId) => {
+        const foldersRef = collection(db, 'folders');
+        deleteDoc(doc(foldersRef, folderId))
+            .then(() => {
+                fetchFolders();
+            })
+            .catch((error) => {
+                console.error('Error deleting document: ', error);
+            });
+    };
+
+
     return (
-        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-            <View style={styles.container}>
-                <Text h2 style={styles.folder}>Folders</Text>
-                <Text h4 style={styles.edit}>Edit</Text>
-                <TextInput
-                    style={styles.search}
-                    placeholder="Search"
-                    placeholderTextColor="gray"
-                    onChangeText={handleSearch}
-                />
-                <View style={styles.content}>
-                    <View style={styles.wrapper}>
-                        <FlatList
-                            data={filteredFolders}
-                            showsVerticalScrollIndicator={false}
-                            keyExtractor={(item, index) => item.id}
-                            renderItem={({item}) => (
-                                <View style={styles.memoContainer}>
-                                    <View style={{flexDirection: 'row'}}>
-                                        <Icon style={styles.icon} name='folder' color={color.warning} size={30} />
-                                        <Text style={styles.memoTitle}>{item.name}</Text>
+        <View style={styles.container}>
+            <Text h2 style={styles.folder}>Folders</Text>
+            <Text h4 style={styles.edit}>Edit</Text>
+            <TextInput
+                style={styles.search}
+                placeholder="Search"
+                placeholderTextColor="gray"
+                onChangeText={handleSearch}
+            />
+            <View style={styles.content}>
+                <View style={styles.wrapper}>
+                    <FlatList
+                        data={filteredFolders}
+                        showsVerticalScrollIndicator={false}
+                        keyExtractor={(item, index) => item.id}
+                        renderItem={({item}) => (
+                            <LongPressGestureHandler
+                                onHandlerStateChange={({ nativeEvent }) => {
+                                    console.log(nativeEvent);
+                                if (nativeEvent.state === State.ACTIVE) {
+                                    setMenuVisible(true);
+                                }
+                                }}
+                            >
+                                <TouchableOpacity
+                                    onPress={() => navigation.navigate('NoteList', { folderId: item.id })}
+                                >
+                                    <View style={styles.memoContainer}>
+                                        <View style={{flexDirection: 'row'}}>
+                                            <Icon style={styles.icon} name='folder' color={color.warning} size={30} />
+                                            <Text style={styles.folderName}>{item.name}</Text>
+                                        </View>
+                                        <View style={{flexDirection: 'row'}}>
+                                            <Text style={styles.memoCount}>30</Text>
+                                        </View>
+                                        <FolderMenu
+                                            item={item}
+                                            menuVisible={menuVisible}
+                                            setMenuVisible={setMenuVisible}
+                                            deleteFolder={deleteFolder}
+                                            />
                                     </View>
-                                    <Text style={styles.memoCount}>25</Text>
-                                </View>
-                            )}
-                        />
-                    </View>
+                                </TouchableOpacity>
+                            </LongPressGestureHandler>
+                        )}
+                    />
                 </View>
-                <TouchableOpacity onPress={toggleModal}>
-                    <Text>
-                        <Icon style={styles.icon} name='create-new-folder' color={color.warning} size={35} />
-                    </Text>
-                </TouchableOpacity>
-                <AddFolderModal isVisible={isModalVisible} toggleModal={toggleModal} />
             </View>
-        </TouchableWithoutFeedback>
+            <TouchableOpacity onPress={() => navigation.navigate('Folder')}>
+                <Text>
+                    <Icon style={styles.icon} name='create-new-folder' color={color.warning} size={35} />
+                </Text>
+            </TouchableOpacity>
+        </View>
     )
 }
 
@@ -141,8 +171,10 @@ const styles = StyleSheet.create({
     },
     wrapper: {
       paddingHorizontal: 20,
+      paddingTop: 5,
+      marginBottom: 10,
       backgroundColor: color.charcoal,
-        borderRadius:10,
+      borderRadius:10,
     },
     memoContainer: {
         flexDirection: 'row',
@@ -151,13 +183,14 @@ const styles = StyleSheet.create({
         borderBottomWidth: 1,
         paddingVertical: 10
     },
-    memoTitle: {
+    folderName: {
         color: color.secondary,
         fontSize: font.md,
         marginLeft: 10
     },
     memoCount: {
         color: 'gray',
-        fontSize: font.md
+        fontSize: font.md,
+        textAlign: 'right'
     },
 })

@@ -1,4 +1,4 @@
-import {View, StyleSheet, ActivityIndicator} from 'react-native';
+import {View, StyleSheet} from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { onAuthStateChanged } from 'firebase/auth';
@@ -7,6 +7,9 @@ import {auth} from './firebase';
 import LoginScreen from './app/screens/LoginScreen';
 import SignupScreen from './app/screens/SignupScreen';
 import MainScreen from "./app/screens/MainScreen";
+import FolderScreen from "./app/screens/FolderScreen";
+import Loader from './app/components/Loader';
+import NoteListScreen from './app/screens/NoteListScreen';
 
 const Stack = createStackNavigator();
 
@@ -25,21 +28,17 @@ export default function App() {
             }
         });
 
-        // Clean up the listener when the component unmounts
         return () => {
             unsubscribe();
         };
-
     }, []);
 
     if (initialRoute === 'Loading') {
         return (
-            <View style={styles.container}>
-                <ActivityIndicator size="large" color="#00ff00" />
-            </View>
+            <Loader />
         );
     }
-
+    
     return (
         <View style={styles.container}>
             <NavigationContainer>
@@ -53,6 +52,12 @@ export default function App() {
                     <Stack.Screen name="Main" component={MainScreen} options={{
                         headerShown: false
                     }} />
+                    <Stack.Screen name="Folder" component={FolderScreen} options={{
+                        headerShown: false
+                    }} />
+                    <Stack.Screen name="NoteList" component={NoteListScreen} options={{
+                        headerShown: true
+                    }} />
                 </Stack.Navigator>
             </NavigationContainer>
         </View>
@@ -62,5 +67,5 @@ export default function App() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-    },
+    }
 });

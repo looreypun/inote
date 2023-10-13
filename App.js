@@ -1,71 +1,37 @@
-import {View, StyleSheet} from 'react-native';
-import { NavigationContainer } from '@react-navigation/native';
-import { createStackNavigator } from '@react-navigation/stack';
 import { onAuthStateChanged } from 'firebase/auth';
-import {useEffect, useState} from "react";
-import {auth} from './firebase';
-import LoginScreen from './app/screens/LoginScreen';
-import SignupScreen from './app/screens/SignupScreen';
-import MainScreen from "./app/screens/MainScreen";
-import FolderScreen from "./app/screens/FolderScreen";
+import { PaperProvider, MD2DarkTheme } from "react-native-paper";
+import { useEffect, useState } from "react";
+import { auth } from './firebase';
 import Loader from './app/components/Loader';
-import NoteListScreen from './app/screens/NoteListScreen';
-
-const Stack = createStackNavigator();
+import Home from "./app/components/Home";
+import AuthScreen from "./app/screens/AuthScreen";
 
 export default function App() {
-    const [user, setUser] = useState(null);
-    const [initialRoute, setInitialRoute] = useState('Loading');
+    const [isLoggedIn, setIsLoggedIn] = useState(false);
 
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, (authUser) => {
-            setUser(authUser);
+            setIsLoggedIn(false)
 
             if (authUser) {
-                setInitialRoute('Main');
-            } else {
-                setInitialRoute('Login');
+                setIsLoggedIn(true);
             }
         });
 
-        return () => {
-            unsubscribe();
-        };
+        return () => unsubscribe();
     }, []);
 
-    if (initialRoute === 'Loading') {
-        return (
-            <Loader />
-        );
+    const authenticateUser = (isAuthenticated) => {
+        setIsLoggedIn(isAuthenticated);
     }
-    
+
     return (
-        <View style={styles.container}>
-            <NavigationContainer>
-                <Stack.Navigator initialRouteName={initialRoute}>
-                    <Stack.Screen name="Login" component={LoginScreen} options={{
-                        headerShown: false
-                    }} />
-                    <Stack.Screen name="Signup" component={SignupScreen} options={{
-                        headerShown: false
-                    }} />
-                    <Stack.Screen name="Main" component={MainScreen} options={{
-                        headerShown: false
-                    }} />
-                    <Stack.Screen name="Folder" component={FolderScreen} options={{
-                        headerShown: false
-                    }} />
-                    <Stack.Screen name="NoteList" component={NoteListScreen} options={{
-                        headerShown: true
-                    }} />
-                </Stack.Navigator>
-            </NavigationContainer>
-        </View>
+        <PaperProvider theme={MD2DarkTheme}>
+            {
+                isLoggedIn
+                    ? <Home />
+                    : <AuthScreen authenticateUser={authenticateUser} />
+            }
+        </PaperProvider>
     );
 }
-
-const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-    }
-});

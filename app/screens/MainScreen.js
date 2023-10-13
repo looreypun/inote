@@ -1,42 +1,24 @@
-import React, {useEffect, useState, useRef} from "react";
-import {
-    TextInput,
-    TouchableOpacity,
-    View,
-    StyleSheet,
-    FlatList
-} from "react-native";
-import {onAuthStateChanged, signOut} from 'firebase/auth';
-import { useIsFocused } from "@react-navigation/native";
-import { Icon, Text } from '@rneui/themed';
-import { collection, getDocs, deleteDoc, query, where, doc } from 'firebase/firestore';
+import React, {useEffect, useState} from "react";
+import {FlatList, StyleSheet, TouchableOpacity, View} from "react-native";
+import {signOut} from 'firebase/auth';
+import {useIsFocused} from "@react-navigation/native";
+import {Icon, Text} from '@rneui/themed';
+import {collection, deleteDoc, doc, getDocs, query, where} from 'firebase/firestore';
 import {auth, db} from '../../firebase';
 import {color} from "../config/color";
 import {font} from "../config/font";
-import { LongPressGestureHandler, State } from 'react-native-gesture-handler';
-import FolderMenu from "../components/FolderMenu";
+import {Searchbar} from "react-native-paper";
 
-const MainScreen = ({ navigation }) => {
-    const [menuVisible, setMenuVisible] = useState(false);
+const MainScreen = ({navigation}) => {
     const [folders, setFolders] = useState([]);
     const [filteredFolders, setFilteredFolders] = useState([]);
 
     const isFocused = useIsFocused();
 
     useEffect(() => {
-        const unsubscribe = onAuthStateChanged(auth, (user) => {
-            if (!user) {
-                navigation.navigate('Login');
-            }
-        });
-    
         if (isFocused) {
             fetchFolders();
         }
-    
-        return () => {
-            unsubscribe();
-        };
     }, [isFocused, navigation]);
 
     const handleSearch = (key) => {
@@ -63,8 +45,8 @@ const MainScreen = ({ navigation }) => {
                 setFolders(data);
                 setFilteredFolders(data);
             }).catch(error => {
-                console.error('Error fetching folders:', error);
-            });
+            console.error('Error fetching folders:', error);
+        });
     }
 
     const deleteFolder = (folderId) => {
@@ -78,15 +60,31 @@ const MainScreen = ({ navigation }) => {
             });
     };
 
+    const renderItem = ({item}) => {
+        return (
+            <TouchableOpacity
+                onPress={() => navigation.navigate('NoteList', {folderId: item.id})}
+            >
+                <View style={styles.memoContainer}>
+                    <View style={{flexDirection: 'row'}}>
+                        <Icon style={styles.icon} name='folder' color={color.warning} size={30}/>
+                        <Text style={styles.folderName}>{item.name}</Text>
+                    </View>
+                    <View style={{flexDirection: 'row'}}>
+                        <Text style={styles.memoCount}>30</Text>
+                    </View>
+                </View>
+            </TouchableOpacity>
+        );
+    }
 
     return (
         <View style={styles.container}>
             <Text h2 style={styles.folder}>Folders</Text>
             <Text h4 style={styles.edit}>Edit</Text>
-            <TextInput
+            <Searchbar
                 style={styles.search}
                 placeholder="Search"
-                placeholderTextColor="gray"
                 onChangeText={handleSearch}
             />
             <View style={styles.content}>
@@ -95,42 +93,13 @@ const MainScreen = ({ navigation }) => {
                         data={filteredFolders}
                         showsVerticalScrollIndicator={false}
                         keyExtractor={(item, index) => item.id}
-                        renderItem={({item}) => (
-                            <LongPressGestureHandler
-                                onHandlerStateChange={({ nativeEvent }) => {
-                                    console.log(nativeEvent);
-                                if (nativeEvent.state === State.ACTIVE) {
-                                    setMenuVisible(true);
-                                }
-                                }}
-                            >
-                                <TouchableOpacity
-                                    onPress={() => navigation.navigate('NoteList', { folderId: item.id })}
-                                >
-                                    <View style={styles.memoContainer}>
-                                        <View style={{flexDirection: 'row'}}>
-                                            <Icon style={styles.icon} name='folder' color={color.warning} size={30} />
-                                            <Text style={styles.folderName}>{item.name}</Text>
-                                        </View>
-                                        <View style={{flexDirection: 'row'}}>
-                                            <Text style={styles.memoCount}>30</Text>
-                                        </View>
-                                        <FolderMenu
-                                            item={item}
-                                            menuVisible={menuVisible}
-                                            setMenuVisible={setMenuVisible}
-                                            deleteFolder={deleteFolder}
-                                            />
-                                    </View>
-                                </TouchableOpacity>
-                            </LongPressGestureHandler>
-                        )}
+                        renderItem={renderItem}
                     />
                 </View>
             </View>
             <TouchableOpacity onPress={() => navigation.navigate('Folder')}>
                 <Text>
-                    <Icon style={styles.icon} name='create-new-folder' color={color.warning} size={35} />
+                    <Icon style={styles.icon} name='create-new-folder' color={color.warning} size={35}/>
                 </Text>
             </TouchableOpacity>
         </View>
@@ -157,24 +126,21 @@ const styles = StyleSheet.create({
         top: 50,
         color: color.warning
     },
-    search:{
+    search: {
         backgroundColor: color.charcoal,
-        color: color.secondary,
-        borderRadius:10,
-        height:45,
-        marginVertical:20,
-        justifyContent:"center",
-        paddingHorizontal:20
+        borderRadius: 10,
+        marginVertical: 20,
     },
     content: {
         flex: 1,
     },
     wrapper: {
-      paddingHorizontal: 20,
-      paddingTop: 5,
-      marginBottom: 10,
-      backgroundColor: color.charcoal,
-      borderRadius:10,
+        flex: 1,
+        paddingHorizontal: 20,
+        paddingTop: 5,
+        marginBottom: 10,
+        backgroundColor: color.charcoal,
+        borderRadius: 10,
     },
     memoContainer: {
         flexDirection: 'row',

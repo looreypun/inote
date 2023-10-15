@@ -2,7 +2,7 @@ import React from 'react';
 import { BottomNavigation } from 'react-native-paper';
 import {NavigationContainer} from "@react-navigation/native";
 import Navigator from "./Navigator";
-import {AllNotesScreen} from "../screens/AllNotesScreen";
+import AllNotesScreen from "../screens/AllNotesScreen";
 import AccountScreen from "../screens/AccountScreen";
 
 const Home = () => {

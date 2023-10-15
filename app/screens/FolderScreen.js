@@ -1,22 +1,15 @@
-import React, {useEffect, useRef, useState} from 'react';
+import React, {useState} from 'react';
 import { View, TextInput, StyleSheet } from 'react-native';
 import { Text } from '@rneui/themed';
 import {collection, addDoc} from "firebase/firestore";
 import {auth, db} from '../../firebase';
 import {color} from "../config/color";
 import Loader from '../components/Loader';
+import moment from 'moment';
 
 const AddFolderModal = ({ navigation }) => {
     const [folderName, setFolderName] = useState('New Folder');
     const [isLoading, setIsLoading] = useState(false);
-
-    const folderNameInputRef = useRef(null);
-
-    useEffect(() => {
-        if (folderNameInputRef.current) {
-            folderNameInputRef.current.focus();
-        }
-    }, [navigation]);
 
     const createFolder = () => {
         if (!folderName) {
@@ -26,7 +19,9 @@ const AddFolderModal = ({ navigation }) => {
         setIsLoading(true);
         const newFolder = {
             name: folderName,
-            uid: auth.currentUser.uid
+            uid: auth.currentUser.uid,
+            createdAt: moment.now(),
+            updatedAt: moment.now()
         };
 
         const foldersRef = collection(db, 'folders');
@@ -55,10 +50,10 @@ const AddFolderModal = ({ navigation }) => {
                 <Text h4 style={styles.done} onPress={createFolder}>Done</Text>
             </View>
             <TextInput
-                ref={folderNameInputRef}
                 style={styles.input}
                 value={folderName}
                 onChangeText={text => setFolderName(text)}
+                autoFocus={true}
             />
         </View>
     );

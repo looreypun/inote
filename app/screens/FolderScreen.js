@@ -20,8 +20,6 @@ const AddFolderModal = ({ navigation }) => {
         const newFolder = {
             name: folderName,
             uid: auth.currentUser.uid,
-            createdAt: moment.now(),
-            updatedAt: moment.now()
         };
 
         const foldersRef = collection(db, 'folders');
